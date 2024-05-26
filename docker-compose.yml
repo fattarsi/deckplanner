@@ -17,6 +17,7 @@ services:
           "--innodb_initialized"
         ]
       retries: 10
+      start_interval: 5s
   
   backend:
     build: 

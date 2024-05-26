@@ -3,6 +3,7 @@
 MANAGEPY="python /app/app/manage.py"
 
 echo "Applying migrations..."
+${MANAGEPY} makemigrations
 ${MANAGEPY} migrate --noinput
 
 DJANGO_SUPERUSER_PASSWORD=admin ${MANAGEPY} createsuperuser \
