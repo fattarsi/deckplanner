@@ -9,7 +9,9 @@ class DeckAdmin(admin.ModelAdmin):
     pass
 
 class CardAdmin(admin.ModelAdmin):
-    pass
+    search_fields = ['name']
+    list_display = ['name', 'set_code', 'set_name', 'rarity']
+    list_filter = ['set_code', 'rarity']
 
 
 admin.site.register(models.Collection, CollectionAdmin)
