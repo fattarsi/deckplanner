@@ -29,5 +29,5 @@ class DeckImportViewSet(viewsets.ViewSet):
     def create(self, request):
         s = serializers.DeckImportSerializer(data=request.data)
         s.is_valid(raise_exception=True)
-        s.save(s)
+        s.save()
         return response.Response(s.data, status=status.HTTP_201_CREATED)

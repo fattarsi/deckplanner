@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 from rest_framework import serializers
 
 from deckplanner import models
@@ -24,6 +26,33 @@ class DeckListSerializer(serializers.ModelSerializer):
         fields = ['name']
 
 class DeckImportSerializer(serializers.Serializer):
-    collection = CollectionSerializer()
+    collection = serializers.SlugRelatedField(slug_field='id', queryset=models.Collection.objects.all())
     name = serializers.CharField(max_length=256)
     deck_list = serializers.CharField(style={'base_template': 'textarea.html'})
+
+    def validate_name(self, value):
+        if models.Deck.objects.filter(name=value).count() > 0:
+            raise serializers.ValidationError('Deck (%s) already exists.' % value)
+        return value
+
+    def validate_deck_list(self, value):
+        self.cards = list()
+        for line in value.splitlines():
+            if line.startswith('//') or not line:
+                continue
+            number, rest = line.split(' ', 1)
+            number = int(number)
+            name = rest.split(' (', 1)[0]
+            available = models.Card.objects.filter(name=name).filter(deck=None)
+            if available.count() < number:
+                raise serializers.ValidationError('%s is not available: Needs %s, have %s' % (name, number, available.count()))
+            available_cards = list(available)
+            for _ in range(number):
+                self.cards.append(available_cards.pop())
+        return value
+
+    def save(self):
+        deck = models.Deck.objects.create(name=self.validated_data['name'])
+        for card in self.cards:
+            card.deck = deck
+            card.save()

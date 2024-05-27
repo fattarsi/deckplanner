@@ -10,8 +10,8 @@ class DeckAdmin(admin.ModelAdmin):
 
 class CardAdmin(admin.ModelAdmin):
     search_fields = ['name']
-    list_display = ['name', 'set_code', 'set_name', 'rarity']
-    list_filter = ['set_code', 'rarity']
+    list_display = ['name', 'set_code', 'set_name', 'rarity', 'deck']
+    list_filter = ['deck', 'rarity', 'set_name']
 
 
 admin.site.register(models.Collection, CollectionAdmin)
