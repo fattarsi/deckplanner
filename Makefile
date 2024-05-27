@@ -10,3 +10,4 @@ run:
 
 clean:
 	docker compose rm -f
+	rm app/deckplanner/migrations/*
