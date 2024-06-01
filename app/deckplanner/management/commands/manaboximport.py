@@ -19,20 +19,17 @@ class Command(BaseCommand):
             next(reader, None) # skip headers
             for row in reader:
                 name = row[2]
-                set_code = row[3]
-                set_name = row[4]
-                collector_number = row[5]
-                rarity = row[7]
                 quantity = int(row[8])
                 scryfall_id = row[10]
+                try:
+                    oc = models.OracleCard.objects.get(id=scryfall_id)
+                except models.OracleCard.DoesNotExist:
+                    self.stdout.write('%s not found by UUID' % name)
+                    oc = models.OracleCard.objects.filter(name=name).first()
                 for _ in range(quantity):
                     models.Card.objects.create(
                         collection=c,
                         name=name,
-                        set_code=set_code,
-                        set_name=set_name,
-                        collector_number=collector_number,
-                        rarity=rarity,
-                        scryfall_id=scryfall_id
+                        oracle_card=oc
                     )
 

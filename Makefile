@@ -10,4 +10,4 @@ run:
 
 clean:
 	docker compose rm -f
-	rm app/deckplanner/migrations/*
+	rm -f app/deckplanner/migrations/0*.py
