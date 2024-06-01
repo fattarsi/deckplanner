@@ -4,5 +4,7 @@ EXPOSE 8000
 WORKDIR /
 #COPY . /
 COPY app/requirements.txt /tmp/requirements.txt
+RUN apt update
+RUN apt install -y mariadb-client
 RUN pip3 install -r /tmp/requirements.txt --no-cache-dir
 ENTRYPOINT ["/app/docker/entrypoint.sh"]
