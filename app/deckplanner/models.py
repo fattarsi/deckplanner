@@ -28,6 +28,7 @@ class Collection(models.Model):
 
 class Deck(models.Model):
     name = models.CharField(max_length=256)
+    is_active = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name

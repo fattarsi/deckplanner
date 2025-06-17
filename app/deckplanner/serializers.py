@@ -13,7 +13,7 @@ class CollectionSerializer(serializers.ModelSerializer):
 class DeckSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Deck
-        fields = ['name']
+        fields = ['name', 'is_active']
 
 class CardSerializer(serializers.ModelSerializer):
     class Meta:
@@ -23,7 +23,7 @@ class CardSerializer(serializers.ModelSerializer):
 class DeckListSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Deck
-        fields = ['name']
+        fields = ['name', 'is_active']
 
 class DeckImportSerializer(serializers.Serializer):
     collection = serializers.SlugRelatedField(slug_field='id', queryset=models.Collection.objects.all())

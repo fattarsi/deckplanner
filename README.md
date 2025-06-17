@@ -22,6 +22,9 @@ make run
 python manage.py scryfallimport <json file>
 ```
 
+    * Download from https://scryfall.com/docs/api/bulk-data
+    * Note: re-running this is idempotent
+
 
 * Import collection from manabox
 
@@ -31,3 +34,13 @@ python manage.py scryfallimport <json file>
 python manage.py manaboximport <csv file>
 ```
 
+    * Export data from the mobile app
+    * Note: re-running this will delete all cards before importing.
+
+== Useful Commands ==
+
+* Run management commands
+```
+docker exec -it deckplanner_backend /bin/bash
+cd app/app/
+```
