@@ -44,3 +44,11 @@ python manage.py manaboximport <csv file>
 docker exec -it deckplanner_backend /bin/bash
 cd app/app/
 ```
+
+```
+python manage.py manaboximport ../ManaBox_Collection.csv --excludeLists Owen Wishlist 'Battle of the Pelennor Fields Scene [Set of 18]' 'Vintage Power Cube'
+```
+
+```
+python manage.py deckimport ../active_decks/
+```
