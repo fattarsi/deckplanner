@@ -2,7 +2,7 @@ from collections import namedtuple
 
 from rest_framework import serializers
 
-from deckplanner import models
+from deckplanner import models, deck_utils
 
 
 class CollectionSerializer(serializers.ModelSerializer):
@@ -36,22 +36,9 @@ class DeckImportSerializer(serializers.Serializer):
         return value
 
     def validate_deck_list(self, value):
-        errors = list()
         self.cards = list()
-        for line in value.splitlines():
-            if line.startswith('//') or not line:
-                continue
-            number, rest = line.split(' ', 1)
-            number = int(number)
-            name = rest.split(' (', 1)[0]
-            available = models.Card.objects.filter(name=name).filter(deck=None)
-            if available.count() < number:
-                in_decks = models.Card.objects.filter(name=name).filter(deck__isnull=False).values_list('deck__name', flat=True)
-                errors.append('Not available: %s  Need: %s, In decks: %s' % (name, number, ' | '.join(in_decks)))
-                continue
-            available_cards = list(available)
-            for _ in range(number):
-                self.cards.append(available_cards.pop())
+        self.cards, errors = deck_utils.validate_decklist(value.splitlines())
+
         if errors:
             raise serializers.ValidationError(errors)
         return value
