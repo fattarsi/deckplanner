@@ -10,6 +10,26 @@ from deckplanner import serializers
 from deckplanner import deck_utils
 
 
+def home(request):
+    """
+    Render the main dashboard page.
+    The template will load the deck data asynchronously.
+    """
+    total_cards = models.Card.objects.count()
+    available_cards = models.Card.objects.filter(deck__isnull=True).count()
+    cards_in_decks = models.Card.objects.filter(deck__isnull=False).count()
+
+    return render(
+        request,
+        'index.html',
+        {
+            'total_cards': total_cards,
+            'available_cards': available_cards,
+            'cards_in_decks': cards_in_decks,
+        },
+    )
+    return render(request, 'index.html')
+
 class CollectionViewSet(viewsets.ModelViewSet):
     queryset = models.Collection.objects.all()
     serializer_class = serializers.CollectionSerializer

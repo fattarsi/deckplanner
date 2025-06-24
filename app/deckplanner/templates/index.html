@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Deck Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-6">
+  <!-- 📊 Card Stats Row -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4">
+      <h2 class="text-xl font-semibold">Total Cards</h2>
+      <p class="text-3xl mt-2">{{ total_cards }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+      <h2 class="text-xl font-semibold">Available Cards</h2>
+      <p class="text-3xl mt-2">{{ available_cards }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+      <h2 class="text-xl font-semibold">Cards in Decks</h2>
+      <p class="text-3xl mt-2">{{ cards_in_decks }}</p>
+    </div>
+  </div>
+
+  <!-- 📊 Deck Stats Row -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4">
+      <h2 class="text-xl font-semibold">Total Decks</h2>
+      <p id="stat-total-decks" class="text-3xl mt-2">0</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+      <h2 class="text-xl font-semibold">Active Decks</h2>
+      <p id="stat-active-decks" class="text-3xl mt-2">0</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+      <h2 class="text-xl font-semibold">Inactive Decks</h2>
+      <p id="stat-inactive-decks" class="text-3xl mt-2">0</p>
+    </div>
+  </div>
+
+  <!-- Deck list -->
+  <div class="bg-white rounded-lg shadow p-4">
+    <h2 class="text-2xl font-bold mb-4">Decks</h2>
+    <ul id="deck-list" class="space-y-2">
+      <!-- JS will insert decks here -->
+    </ul>
+  </div>
+
+  <script>
+    async function fetchDecks() {
+      const res = await fetch('/api/decks/');
+      if (!res.ok) {
+        console.error('Error fetching decks');
+        return;
+      }
+      const data = await res.json();
+
+      // Update stats
+      const total = data.count;
+      const activeCount = data.results.filter(d => d.is_active).length;
+      document.getElementById('stat-total-decks').textContent = total;
+      document.getElementById('stat-active-decks').textContent = activeCount;
+      document.getElementById('stat-inactive-decks').textContent = total - activeCount;
+
+      // Render decks
+      const list = document.getElementById('deck-list');
+      list.innerHTML = '';
+      data.results.forEach(deck => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <a href="${deck.url}" class="block p-3 bg-gray-100 hover:bg-gray-200 rounded transition">
+            <span class="font-medium">${deck.name}</span>
+            <span class="text-sm text-gray-500">${deck.is_active ? 'Active' : 'Inactive'}</span>
+          </a>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    fetchDecks();
+  </script>
+</body>
+</html>
+
