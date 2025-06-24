@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Deck Manager</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="csrf-token" content="{{ csrf_token }}">
 </head>
 <body class="bg-gray-50 min-h-screen p-6">
   <!-- Subtle API link -->
@@ -49,23 +50,35 @@
       <button id="open-add-deck" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">Add deck</button> 
     </h2>
     <!-- Add Deck Modal -->
-    <div id="add-deck-modal" class="fixed inset-0 bg-black/50 hidden justify-center items-center z-50">
-      <div class="bg-white p-6 rounded w-96 space-y-4">
+    <div id="add-deck-modal" class="fixed inset-0 bg-black/50 hidden flex justify-center items-center z-50">
+      <div class="bg-white p-6 rounded w-96 space-y-4 shadow-xl">
         <h3 class="text-lg font-semibold mb-2">Add a new deck</h3>
-        <input id="new-deck-name" type="text" placeholder="Deck name" class="border w-full p-2 rounded" />
-        <textarea id="new-deck-list" placeholder="Card list (one per line)" class="border w-full p-2 rounded h-32"></textarea>
+
+        <input id="new-deck-name" type="text" placeholder="Deck name"
+              class="border w-full p-2 rounded" />
+
+        <textarea id="new-deck-list" placeholder="Card list (one per line)"
+                  class="border w-full p-2 rounded h-32"></textarea>
+
+        <!-- Error container -->
+        <div id="error-messages" class="text-red-600 text-sm mt-2"></div>
+
         <div class="flex justify-end gap-2">
           <button id="cancel-add-deck" class="bg-gray-200 px-3 py-1 rounded">Cancel</button>
           <button id="submit-add-deck" class="bg-blue-500 text-white px-3 py-1 rounded">Create</button>
         </div>
       </div>
     </div>
+
     <ul id="deck-list" class="space-y-2">
       <!-- JS will insert decks here -->
     </ul>
   </div>
 
   <script>
+    function getCsrfToken() {
+      return document.querySelector('meta[name="csrf-token"]').content;
+    }
     document.getElementById('open-add-deck').onclick = () => {
     document.getElementById('add-deck-modal').classList.remove('hidden');
     };
@@ -76,15 +89,23 @@
     document.getElementById('submit-add-deck').onclick = async () => {
       const name = document.getElementById('new-deck-name').value;
       const list = document.getElementById('new-deck-list').value;
-      const resp = await fetch('/api/deck/', {
+      const resp = await fetch('/api/deckimport/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, deck_list: list })
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken(),
+        },
+        body: JSON.stringify({ name, deck_list: list, collection: 1 })
       });
       if (resp.ok) {
         location.reload();
       } else {
-        alert('Error creating deck.');
+        const errors = await resp.json();
+        let msg = '';
+        for (const [field, messages] of Object.entries(errors)) {
+          msg += `${field}: ${messages.join(', ')}\n`;
+        }
+        alert(`Error creating deck:\n\n${msg}`);
       }
     };
 
