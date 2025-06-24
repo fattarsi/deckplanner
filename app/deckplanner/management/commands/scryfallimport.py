@@ -11,6 +11,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         json_file = kwargs['json_file']
 
+        models.OracleCard.objects.all().delete()
         try:
             with open(json_file, 'r', encoding='utf-8') as file:
                 objects = ijson.items(file, 'item')

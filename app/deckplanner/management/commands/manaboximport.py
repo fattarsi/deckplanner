@@ -41,7 +41,7 @@ class Command(BaseCommand):
                 try:
                     oc = models.OracleCard.objects.get(id=scryfall_id)
                 except models.OracleCard.DoesNotExist:
-                    #self.stdout.write('%s not found by UUID' % name)
+                    self.stdout.write('%s not found by UUID' % name)
                     oc = models.OracleCard.objects.filter(name=name).first()
                 for _ in range(quantity):
                     models.Card.objects.create(

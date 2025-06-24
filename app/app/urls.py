@@ -28,6 +28,7 @@ router.register(r'cards', views.CardViewSet)
 router.register(r'deckimport', views.DeckImportViewSet, basename='deckimport')
 
 urlpatterns = [
+    path('deckplanner/', views.DeckPlannerView.as_view()),
     path('', include(router.urls)),
     path('admin/', admin.site.urls),
 ]

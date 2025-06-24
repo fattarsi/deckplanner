@@ -12,7 +12,7 @@ class OracleCard(models.Model):
     rarity = models.CharField(max_length=256)
     toughness = models.CharField(max_length=256)
     edhrec_rank = models.IntegerField()
-    color_identity = models.CharField(max_length=256)
+    color_identity = models.JSONField(default=list)
     set_code = models.CharField(max_length=256)
     set_name = models.CharField(max_length=256)
 

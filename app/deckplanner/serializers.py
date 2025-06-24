@@ -48,3 +48,29 @@ class DeckImportSerializer(serializers.Serializer):
         for card in self.cards:
             card.deck = deck
             card.save()
+
+
+class DeckPlannerSerializer(serializers.Serializer):
+    deck_list = serializers.CharField(style={'base_template': 'textarea.html'})
+
+    def validate_deck_list(self, value):
+        cards = list()
+        cards, errors = deck_utils.validate_decklist(value.splitlines())
+
+        if errors:
+            raise serializers.ValidationError(errors)
+        return cards
+
+
+class OracleCardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.OracleCard
+        fields = ['id', 'cmc', 'type_line', 'color_identity', 'rarity', 'edhrec_rank']
+
+
+class CardSerializer(serializers.ModelSerializer):
+    oracle_card = OracleCardSerializer(many=False, read_only=True)
+
+    class Meta:
+        model = models.Card
+        fields = ['name', 'oracle_card']
