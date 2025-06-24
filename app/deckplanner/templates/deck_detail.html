@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Deck Detail</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  .card-column {
+    width: 180px;
+    position: relative;
+  }
+  .card-column img {
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 0 8px rgba(0,0,0,.1);
+    margin-top: -220px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    z-index: 0;
+  }
+  .card-column img:first-child {
+    margin-top: 0;
+  }
+  .card-column img:hover ~ img {
+    transform: translateY(220px);
+  }
+  .card-column img:hover {
+    z-index: 10;
+    transform: scale(1.05);
+  }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen p-6">
+
+<!-- 🏠 Back home -->
+<a href="/" class="text-blue-500 hover:underline">&larr; Back home</a>
+
+<h1 class="text-2xl font-bold mb-4" id="deck-name">Loading deck...</h1>
+
+<!-- Supertype columns -->
+<div id="columns-container" class="flex flex-wrap gap-8"></div>
+
+<!-- Deck Planner -->
+<div class="mt-12">
+  <button id="toggle-planner" class="bg-blue-500 text-white px-4 py-2 rounded">Open Deck Planner</button>
+  <div id="planner-container" class="mt-4 hidden">
+    <div id="planner-grid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+    <div class="flex justify-between mt-4">
+      <button id="prev-page" class="bg-gray-200 px-3 py-1 rounded disabled:opacity-50">Previous</button>
+      <button id="next-page" class="bg-gray-200 px-3 py-1 rounded disabled:opacity-50">Next</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const deckId = "{{ deck_id }}";
+  async function loadDeck() {
+    const resp = await fetch(`/api/decks/${deckId}/`);
+    const data = await resp.json();
+    document.getElementById('deck-name').textContent = data.name;
+
+    const grouped = {};
+    data.cards.forEach(card => {
+      const supertype = card.oracle_card.type_line.split(' —')[0];
+      if (!grouped[supertype]) grouped[supertype] = [];
+      grouped[supertype].push(card);
+    });
+
+    const container = document.getElementById('columns-container');
+
+    for (const [typeLine, cards] of Object.entries(grouped)) {
+      const columnDiv = document.createElement('div');
+
+      const title = document.createElement('h2');
+      title.textContent = typeLine;
+      title.className = 'font-semibold text-lg mb-2';
+      columnDiv.appendChild(title);
+
+      const column = document.createElement('div');
+      column.className = 'card-column';
+      columnDiv.appendChild(column);
+
+      const imgUrls = await Promise.all(
+        cards.map(async (c) => {
+          const imgData = await fetch(`https://api.scryfall.com/cards/${c.oracle_card.id}`).then(r => r.json());
+          return { url: imgData.image_uris.normal, name: c.name };
+        })
+      );
+
+      imgUrls.forEach(({url, name}) => {
+        const img = document.createElement('img');
+        img.src = url;
+        img.title = name;
+        column.appendChild(img);
+      });
+
+      container.appendChild(columnDiv);
+    }
+  }
+
+  // Planner functionality
+  let nextUrl = null;
+  let prevUrl = null;
+
+  async function loadPlanner(url) {
+    const resp = await fetch(url);
+    const data = await resp.json();
+    nextUrl = data.next;
+    prevUrl = data.previous;
+
+    document.getElementById('next-page').disabled = !nextUrl;
+    document.getElementById('prev-page').disabled = !prevUrl;
+
+    const grid = document.getElementById('planner-grid');
+    grid.innerHTML = '';
+    for (const card of data.results) {
+      const imgData = await fetch(`https://api.scryfall.com/cards/${card.oracle_card.id}`).then(r => r.json());
+      let imgUrl = null;
+      if (imgData.image_uris) {
+        imgUrl = imgData.image_uris.normal;
+      } else if (imgData.card_faces && imgData.card_faces.length > 0) {
+        imgUrl = imgData.card_faces[0].image_uris.normal;
+      }
+      const img = document.createElement('img');
+      img.src = imgUrl || '';
+      img.title = card.name;
+      grid.appendChild(img);
+    }
+  }
+
+  document.getElementById('toggle-planner').addEventListener('click', () => {
+    const planner = document.getElementById('planner-container');
+    planner.classList.toggle('hidden');
+    if (!planner.classList.contains('hidden')) {
+      loadPlanner(`/api/decks/${deckId}/planner`);
+    }
+  });
+
+  document.getElementById('next-page').addEventListener('click', () => {
+    if (nextUrl) loadPlanner(nextUrl);
+  });
+
+  document.getElementById('prev-page').addEventListener('click', () => {
+    if (prevUrl) loadPlanner(prevUrl);
+  });
+
+  loadDeck();
+</script>
+</body>
+</html>

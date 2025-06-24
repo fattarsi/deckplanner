@@ -36,7 +36,7 @@ class Deck(models.Model):
 class Card(models.Model):
     name = models.CharField(max_length=256)
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
-    deck = models.ForeignKey(Deck, on_delete=models.SET_NULL, blank=True, null=True)
+    deck = models.ForeignKey(Deck, on_delete=models.SET_NULL, blank=True, null=True, related_name='cards')
     oracle_card = models.ForeignKey(OracleCard, on_delete=models.CASCADE)
 
     def __str__(self):

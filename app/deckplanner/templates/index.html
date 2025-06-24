@@ -6,6 +6,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen p-6">
+  <!-- Subtle API link -->
+  <div class="text-right mb-2">
+    <a href="/api/" class="text-xs text-blue-500 hover:underline opacity-60 hover:opacity-100">API</a>
+  </div>
   <!-- 📊 Card Stats Row -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
     <div class="bg-white rounded-lg shadow p-4">
@@ -40,13 +44,50 @@
 
   <!-- Deck list -->
   <div class="bg-white rounded-lg shadow p-4">
-    <h2 class="text-2xl font-bold mb-4">Decks</h2>
+    <h2 class="text-2xl font-bold mb-4">
+      Decks
+      <button id="open-add-deck" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">Add deck</button> 
+    </h2>
+    <!-- Add Deck Modal -->
+    <div id="add-deck-modal" class="fixed inset-0 bg-black/50 hidden justify-center items-center z-50">
+      <div class="bg-white p-6 rounded w-96 space-y-4">
+        <h3 class="text-lg font-semibold mb-2">Add a new deck</h3>
+        <input id="new-deck-name" type="text" placeholder="Deck name" class="border w-full p-2 rounded" />
+        <textarea id="new-deck-list" placeholder="Card list (one per line)" class="border w-full p-2 rounded h-32"></textarea>
+        <div class="flex justify-end gap-2">
+          <button id="cancel-add-deck" class="bg-gray-200 px-3 py-1 rounded">Cancel</button>
+          <button id="submit-add-deck" class="bg-blue-500 text-white px-3 py-1 rounded">Create</button>
+        </div>
+      </div>
+    </div>
     <ul id="deck-list" class="space-y-2">
       <!-- JS will insert decks here -->
     </ul>
   </div>
 
   <script>
+    document.getElementById('open-add-deck').onclick = () => {
+    document.getElementById('add-deck-modal').classList.remove('hidden');
+    };
+    document.getElementById('cancel-add-deck').onclick = () => {
+      document.getElementById('add-deck-modal').classList.add('hidden');
+    };
+
+    document.getElementById('submit-add-deck').onclick = async () => {
+      const name = document.getElementById('new-deck-name').value;
+      const list = document.getElementById('new-deck-list').value;
+      const resp = await fetch('/api/deck/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, deck_list: list })
+      });
+      if (resp.ok) {
+        location.reload();
+      } else {
+        alert('Error creating deck.');
+      }
+    };
+
     async function fetchDecks() {
       const res = await fetch('/api/decks/');
       if (!res.ok) {
@@ -62,21 +103,21 @@
       document.getElementById('stat-active-decks').textContent = activeCount;
       document.getElementById('stat-inactive-decks').textContent = total - activeCount;
 
-      // Render decks
+      // list
       const list = document.getElementById('deck-list');
       list.innerHTML = '';
       data.results.forEach(deck => {
         const li = document.createElement('li');
         li.innerHTML = `
-          <a href="${deck.url}" class="block p-3 bg-gray-100 hover:bg-gray-200 rounded transition">
+          <a href="/decks/${deck.url.split('/').slice(-2,-1)[0]}/"
+             class="block p-3 bg-gray-100 hover:bg-gray-200 rounded transition">
             <span class="font-medium">${deck.name}</span>
-            <span class="text-sm text-gray-500">${deck.is_active ? 'Active' : 'Inactive'}</span>
+            <span class="text-sm text-gray-500">${deck.card_count} cards</span>
           </a>
         `;
         list.appendChild(li);
       });
     }
-
     fetchDecks();
   </script>
 </body>

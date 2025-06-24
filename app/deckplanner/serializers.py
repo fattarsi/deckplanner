@@ -12,9 +12,24 @@ class CollectionSerializer(serializers.ModelSerializer):
         model = models.Collection
         fields = ['name']
 
+class OracleCardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.OracleCard
+        fields = ['id', 'cmc', 'type_line', 'color_identity', 'rarity', 'edhrec_rank']
+
+
+class CardSerializer(serializers.ModelSerializer):
+    oracle_card = OracleCardSerializer(many=False, read_only=True)
+
+    class Meta:
+        model = models.Card
+        fields = ['name', 'oracle_card']
+
 class DeckSerializer(serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='deck-detail', lookup_field='pk')
     planner_url = serializers.SerializerMethodField()
+    cards = CardSerializer(many=True, read_only=True)
+    card_count = serializers.IntegerField(source='cards.count', read_only=True)
 
     def get_planner_url(self, obj):
         request = self.context.get('request')
@@ -23,12 +38,7 @@ class DeckSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Deck
-        fields = ['name', 'is_active', 'url', 'planner_url']
-
-class CardSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Card
-        fields = ['name']
+        fields = ['name', 'is_active', 'url', 'planner_url', 'cards', 'card_count']
 
 class DeckListSerializer(serializers.ModelSerializer):
     class Meta:
@@ -71,16 +81,3 @@ class DeckPlannerSerializer(serializers.Serializer):
             raise serializers.ValidationError(errors)
         return cards
 
-
-class OracleCardSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.OracleCard
-        fields = ['id', 'cmc', 'type_line', 'color_identity', 'rarity', 'edhrec_rank']
-
-
-class CardSerializer(serializers.ModelSerializer):
-    oracle_card = OracleCardSerializer(many=False, read_only=True)
-
-    class Meta:
-        model = models.Card
-        fields = ['name', 'oracle_card']

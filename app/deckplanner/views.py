@@ -30,6 +30,9 @@ def home(request):
     )
     return render(request, 'index.html')
 
+def deck_detail(request, deck_id):
+    return render(request, 'deck_detail.html', {'deck_id': deck_id})
+
 class CollectionViewSet(viewsets.ModelViewSet):
     queryset = models.Collection.objects.all()
     serializer_class = serializers.CollectionSerializer
@@ -65,7 +68,7 @@ class DeckPlannerView(views.APIView):
     def get(self, request, deck_id, *args, **kw):
         deck = get_object_or_404(models.Deck, pk=deck_id)
 
-        cards = deck.card_set.all()
+        cards = deck.cards.all()
 
         ci = deck_utils.get_color_identity(cards)
 
@@ -76,7 +79,7 @@ class DeckPlannerView(views.APIView):
             deck__isnull=True).order_by('oracle_card__edhrec_rank')
 
         paginator = pagination.PageNumberPagination()
-        page = paginator.paginate_queryset(cards, request)
+        page = paginator.paginate_queryset(ac, request)
 
-        s = serializers.CardSerializer(ac, many=True)
+        s = serializers.CardSerializer(page, many=True)
         return paginator.get_paginated_response(s.data)

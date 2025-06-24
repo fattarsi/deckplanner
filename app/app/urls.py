@@ -31,5 +31,6 @@ urlpatterns = [
     path('api/decks/<int:deck_id>/planner', views.DeckPlannerView.as_view(), name='deck-planner'),
     path('api/', include(router.urls)),
     path('admin/', admin.site.urls),
+    path("decks/<int:deck_id>/", views.deck_detail, name="deck-detail"),
     path('', views.home, name='deck-dashboard'),
 ]
