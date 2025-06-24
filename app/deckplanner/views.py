@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 
 from rest_framework import views, viewsets, response, status
 from rest_framework import pagination
@@ -42,17 +42,21 @@ class DeckPlannerView(views.APIView):
     def get_serializer_class(self):
         return self.serializer_class
 
-    def post(self, request):
-        s = serializers.DeckPlannerSerializer(data=request.data)
-        s.is_valid(raise_exception=True)
+    def get(self, request, deck_id, *args, **kw):
+        deck = get_object_or_404(models.Deck, pk=deck_id)
 
-        cards = s.validated_data['deck_list']
+        cards = deck.card_set.all()
+
         ci = deck_utils.get_color_identity(cards)
 
         # cards not in any deck with compatible color identity
-        ac = models.Card.objects.filter(deck__isnull=True)
+        ac = models.Card.objects.exclude(oracle_card__type_line__startswith='Basic Land')
+        ac = ac.filter(
+            oracle_card__color_identity__contained_by=ci.split(','),
+            deck__isnull=True).order_by('oracle_card__edhrec_rank')
+
         paginator = pagination.PageNumberPagination()
-        page = paginator.paginate_queryset(ac, request)
+        page = paginator.paginate_queryset(cards, request)
 
         s = serializers.CardSerializer(ac, many=True)
         return paginator.get_paginated_response(s.data)

@@ -1,5 +1,7 @@
 from collections import namedtuple
 
+from django import urls
+
 from rest_framework import serializers
 
 from deckplanner import models, deck_utils
@@ -11,9 +13,17 @@ class CollectionSerializer(serializers.ModelSerializer):
         fields = ['name']
 
 class DeckSerializer(serializers.ModelSerializer):
+    url = serializers.HyperlinkedIdentityField(view_name='deck-detail', lookup_field='pk')
+    planner_url = serializers.SerializerMethodField()
+
+    def get_planner_url(self, obj):
+        request = self.context.get('request')
+        path = urls.reverse('deck-planner', kwargs={'deck_id': obj.pk})
+        return request.build_absolute_uri(path)
+
     class Meta:
         model = models.Deck
-        fields = ['name', 'is_active']
+        fields = ['name', 'is_active', 'url', 'planner_url']
 
 class CardSerializer(serializers.ModelSerializer):
     class Meta:
