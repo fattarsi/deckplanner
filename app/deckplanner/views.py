@@ -65,6 +65,37 @@ class DeckPlannerView(views.APIView):
     def get_serializer_class(self):
         return self.serializer_class
 
+    def get_queryset(self):
+        qs = models.Card.objects.exclude(oracle_card__type_line__startswith='Basic Land')
+        qs = qs.filter(deck__isnull=True)
+
+
+        search = self.request.query_params.get('search')
+        supertype = self.request.query_params.get('supertype')
+        cmc = self.request.query_params.get('cmc')
+        color = self.request.query_params.get('color')
+
+        if search:
+            qs = qs.filter(name__icontains=search)
+
+        if supertype:
+            # filter by supertype (before " —")
+            qs = qs.filter(
+                oracle_card__type_line__istartswith=supertype
+            )
+
+        if cmc:
+            if cmc == "5+":
+                qs = qs.filter(oracle_card__cmc__gte=5)
+            else:
+                qs = qs.filter(oracle_card__cmc=float(cmc))
+
+        if color:
+            # color_identity is a list on oracle_card; this assumes you store it as arrayfield
+            qs = qs.filter(oracle_card__color_identity__contains=[color])
+
+        return qs.order_by('name')  # optional ordering
+
     def get(self, request, deck_id, *args, **kw):
         deck = get_object_or_404(models.Deck, pk=deck_id)
 
@@ -73,10 +104,8 @@ class DeckPlannerView(views.APIView):
         ci = deck_utils.get_color_identity(cards)
 
         # cards not in any deck with compatible color identity
-        ac = models.Card.objects.exclude(oracle_card__type_line__startswith='Basic Land')
-        ac = ac.filter(
-            oracle_card__color_identity__contained_by=ci,
-            deck__isnull=True).order_by('oracle_card__edhrec_rank')
+        ac = self.get_queryset()
+        ac = ac.filter(oracle_card__color_identity__contained_by=ci).order_by('oracle_card__edhrec_rank')
 
         paginator = pagination.PageNumberPagination()
         page = paginator.paginate_queryset(ac, request)

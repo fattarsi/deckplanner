@@ -66,6 +66,51 @@
 <div class="mt-12">
   <button id="toggle-planner" class="bg-blue-500 text-white px-4 py-2 rounded">Open Deck Planner</button>
   <div id="planner-container" class="mt-4 hidden">
+    <div id="planner-filters" class="flex flex-wrap gap-4 mb-4 items-center">
+
+    <!-- Search -->
+    <input
+      type="text"
+      id="filter-name"
+      placeholder="Search by name"
+      class="border rounded px-2 py-1"
+    />
+
+    <!-- Supertype -->
+    <select id="filter-supertype" class="border rounded px-2 py-1">
+      <option value="">All Types</option>
+      <option value="Creature">Creature</option>
+      <option value="Instant">Instant</option>
+      <option value="Sorcery">Sorcery</option>
+      <option value="Artifact">Artifact</option>
+      <option value="Enchantment">Enchantment</option>
+      <option value="Planeswalker">Planeswalker</option>
+      <!-- Add more as needed -->
+    </select>
+
+    <!-- CMC -->
+    <select id="filter-cmc" class="border rounded px-2 py-1">
+      <option value="">Any CMC</option>
+      <option value="0">0</option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5+">5+</option>
+    </select>
+
+    <!-- Color Identity -->
+    <select id="filter-color" class="border rounded px-2 py-1">
+      <option value="">All Colors</option>
+      <option value="W">White</option>
+      <option value="U">Blue</option>
+      <option value="B">Black</option>
+      <option value="R">Red</option>
+      <option value="G">Green</option>
+      <option value="C">Colorless</option>
+    </select>
+  </div>
+
     <div id="planner-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(11.5rem, 1fr)); gap:2px;"></div>
 
 
@@ -81,6 +126,33 @@
 </a>
 
 <script>
+  const plannerGrid = document.getElementById('planner-grid');
+  const deckId = "{{ deck_id }}";
+
+  // Attach event listeners
+  ['filter-name','filter-supertype','filter-cmc','filter-color'].forEach(id => {
+    document.getElementById(id).addEventListener('change', resetAndReloadPlanner);
+  });
+  document.getElementById('filter-name').addEventListener('input', debounce(resetAndReloadPlanner, 300)); // optional debounce for search
+
+  function debounce(func, delay) {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => func.apply(this, args), delay);
+    };
+  }
+  function resetAndReloadPlanner() {
+    // clear current grid
+    plannerGrid.innerHTML = '';
+    // build new filtered URL
+    nextUrl = buildPlannerUrl(`/api/decks/${deckId}/planner`);
+    // reset loading flags
+    loadingPlanner = false;
+    // load first page with filters
+    loadPlannerPage(nextUrl);
+  }
+
   const backToTop = document.getElementById('back-to-top');
   document.addEventListener('scroll', () => {
     if (window.scrollY > 400) {
@@ -114,7 +186,20 @@
     img.dataset.id = cardId;
     return img;
   }
+  function buildPlannerUrl(baseUrl) {
+    const params = new URLSearchParams();
+    const name = document.getElementById('filter-name').value;
+    const supertype = document.getElementById('filter-supertype').value;
+    const cmc = document.getElementById('filter-cmc').value;
+    const color = document.getElementById('filter-color').value;
 
+    if (name) params.append('search', name);
+    if (supertype) params.append('supertype', supertype);
+    if (cmc) params.append('cmc', cmc);
+    if (color) params.append('color', color);
+
+    return `${baseUrl}?${params.toString()}`;
+  }
   // Handler for clicking a deck card
   document.getElementById('columns-container').addEventListener('click', e => {
     if (e.target.tagName === 'IMG') {
@@ -164,7 +249,6 @@
   });
 
   document.getElementById('commit-changes').addEventListener('click', async () => {
-    const deckId = {{deck_id}}; // pass this in context or as a data-attr
     const addIds = Array.from(document.getElementById('add-column').children).map(img => img.dataset.id);
     const removeIds = Array.from(document.getElementById('remove-column').children).map(img => img.dataset.id);
 
@@ -186,8 +270,6 @@
     }
   });
 
-
-  const deckId = "{{ deck_id }}";
   async function loadDeck() {
     const resp = await fetch(`/api/decks/${deckId}/`);
     const data = await resp.json();
@@ -279,6 +361,7 @@
   const sentinel = document.getElementById('scroll-sentinel');
   const observer = new IntersectionObserver(entries => {
     if (entries[0].isIntersecting) {
+      //nextUrl = buildPlannerUrl(`/api/decks/${deckId}/planner`);
       loadPlannerPage(nextUrl);
     }
   });
