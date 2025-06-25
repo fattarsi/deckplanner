@@ -83,3 +83,17 @@ class DeckPlannerView(views.APIView):
 
         s = serializers.CardSerializer(page, many=True)
         return paginator.get_paginated_response(s.data)
+
+class DeckUpdateCardsView(views.APIView):
+    def post(self, request, deck_id):
+        deck = get_object_or_404(models.Deck, id=deck_id)
+        data = request.data
+        add_ids = data.get('add_ids', [])
+        remove_ids = data.get('remove_ids', [])
+        # Remove cards
+        if remove_ids:
+            models.Card.objects.filter(id__in=remove_ids, deck=deck).update(deck=None)
+        # Add cards
+        if add_ids:
+            models.Card.objects.filter(id__in=add_ids).update(deck=deck)
+        return response.Response({"message": "Changes committed."}, status=status.HTTP_200_OK)

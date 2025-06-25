@@ -5,6 +5,7 @@
 <title>Deck Detail</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<meta name="csrf-token" content="{{ csrf_token }}">
 <style>
   .card-column {
     width: 180px;
@@ -57,6 +58,7 @@
     <div id="add-column" class="flex flex-col gap-2 min-h-[100px]" data-list="add"></div>
   </div>
 </div>
+  <button id="commit-changes" class="bg-purple-500 text-white px-3 py-1 rounded mt-4">Commit Changes</button>
 
 <!-- Deck Planner -->
 <div class="mt-12">
@@ -69,6 +71,9 @@
 </div>
 
 <script>
+  function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]').content;
+  }
   new Sortable(document.getElementById('remove-column'), {
     animation: 150,
     group: 'remove',
@@ -80,6 +85,7 @@
     group: 'add',
     draggable: 'img'
   });
+
   function createThumbnail(imgUrl, cardName, list, cardId) {
     const img = document.createElement('img');
     img.src = imgUrl;
@@ -139,6 +145,29 @@
     }
   });
 
+  document.getElementById('commit-changes').addEventListener('click', async () => {
+    const deckId = {{deck_id}}; // pass this in context or as a data-attr
+    const addIds = Array.from(document.getElementById('add-column').children).map(img => img.dataset.id);
+    const removeIds = Array.from(document.getElementById('remove-column').children).map(img => img.dataset.id);
+
+    const resp = await fetch(`/api/decks/${deckId}/update_cards/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCsrfToken()
+      },
+      body: JSON.stringify({ add_ids: addIds, remove_ids: removeIds })
+    });
+
+    if (resp.ok) {
+      alert('Changes committed successfully.');
+      location.reload();
+    } else {
+      const err = await resp.json();
+      alert(`Error: ${JSON.stringify(err)}`);
+    }
+  });
+
 
   const deckId = "{{ deck_id }}";
   async function loadDeck() {
@@ -174,12 +203,14 @@
         })
       );
 
-      imgUrls.forEach(({url, name}) => {
+      cards.forEach((card, index) => {
         const img = document.createElement('img');
-        img.src = url;
-        img.title = name;
+        img.src = imgUrls[index].url;
+        img.title = card.name;
+        img.dataset.id = card.id;  // << Add this!
         column.appendChild(img);
       });
+
 
       container.appendChild(columnDiv);
     }
@@ -218,6 +249,7 @@
       img.src = imgUrl;
       img.title = card.name;
       img.className = 'w-full h-auto';
+      img.dataset.id = card.id;
       grid.appendChild(img);
     }
 

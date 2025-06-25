@@ -23,7 +23,7 @@ class CardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Card
-        fields = ['name', 'oracle_card']
+        fields = ['id', 'name', 'oracle_card']
 
 class DeckSerializer(serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='deck-detail', lookup_field='pk')
@@ -38,7 +38,7 @@ class DeckSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Deck
-        fields = ['name', 'is_active', 'url', 'planner_url', 'cards', 'card_count']
+        fields = ['id', 'name', 'is_active', 'url', 'planner_url', 'cards', 'card_count']
 
 class DeckListSerializer(serializers.ModelSerializer):
     class Meta:
