@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <title>Deck Detail</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 <style>
   .card-column {
     width: 180px;
@@ -41,6 +42,22 @@
 <!-- Supertype columns -->
 <div id="columns-container" class="flex flex-wrap gap-8"></div>
 
+<!-- Middle section -->
+<div class="mt-8 grid grid-cols-2 gap-8">
+  <!-- Remove column -->
+  <div>
+    <h3 class="text-red-500 font-bold mb-2 text-right">Remove</h3>
+    <!-- justify-end will push the contents to the right -->
+    <div id="remove-column" class="flex flex-col gap-2 items-end min-h-[100px]" data-list="remove"></div>
+  </div>
+
+  <!-- Add column -->
+  <div>
+    <h3 class="text-green-500 font-bold mb-2">Add</h3>
+    <div id="add-column" class="flex flex-col gap-2 min-h-[100px]" data-list="add"></div>
+  </div>
+</div>
+
 <!-- Deck Planner -->
 <div class="mt-12">
   <button id="toggle-planner" class="bg-blue-500 text-white px-4 py-2 rounded">Open Deck Planner</button>
@@ -52,6 +69,77 @@
 </div>
 
 <script>
+  new Sortable(document.getElementById('remove-column'), {
+    animation: 150,
+    group: 'remove',
+    draggable: 'img'
+  });
+
+  new Sortable(document.getElementById('add-column'), {
+    animation: 150,
+    group: 'add',
+    draggable: 'img'
+  });
+  function createThumbnail(imgUrl, cardName, list, cardId) {
+    const img = document.createElement('img');
+    img.src = imgUrl;
+    img.title = cardName;
+    img.className = 'w-20 h-auto cursor-grab border rounded';
+    img.draggable = true;
+    img.dataset.list = list;
+    img.dataset.id = cardId;
+    return img;
+  }
+
+  // Handler for clicking a deck card
+  document.getElementById('columns-container').addEventListener('click', e => {
+    if (e.target.tagName === 'IMG') {
+      const card = e.target;
+      const cardId = card.dataset.id;
+      const removeColumn = document.getElementById('remove-column');
+
+      if (card.classList.contains('border-2')) {
+        // Already selected — remove highlight & remove from middle column
+        card.classList.remove('border-2', 'border-green-500');
+
+        // Find and remove thumbnail in middle column
+        const thumb = removeColumn.querySelector(`img[data-id="${cardId}"]`);
+        if (thumb) thumb.remove();
+      } else {
+        // Highlight this card
+        card.classList.add('border-2', 'border-green-500');
+
+        // Create thumbnail in middle column
+        const thumb = createThumbnail(card.src, card.title, 'remove', cardId);
+        removeColumn.appendChild(thumb);
+      }
+    }
+  });
+
+  // Handler for clicking a planner card
+  document.getElementById('planner-grid').addEventListener('click', e => {
+    if (e.target.tagName === 'IMG') {
+      const card = e.target;
+      const cardId = card.dataset.id;
+      const addColumn = document.getElementById('add-column');
+
+      if (card.classList.contains('border-2')) {
+        // Already selected — remove highlight & thumbnail
+        card.classList.remove('border-2', 'border-green-500');
+        const thumb = addColumn.querySelector(`img[data-id="${cardId}"]`);
+        if (thumb) thumb.remove();
+      } else {
+        // Highlight
+        card.classList.add('border-2', 'border-green-500');
+
+        // Thumbnail
+        const thumb = createThumbnail(card.src, card.title, 'add', cardId);
+        addColumn.appendChild(thumb);
+      }
+    }
+  });
+
+
   const deckId = "{{ deck_id }}";
   async function loadDeck() {
     const resp = await fetch(`/api/decks/${deckId}/`);
@@ -98,52 +186,52 @@
   }
 
   // Planner functionality
-let nextUrl = `/api/decks/{{ deck_id }}/planner`;
-let loadingPlanner = false;
+  let nextUrl = `/api/decks/{{ deck_id }}/planner`;
+  let loadingPlanner = false;
 
-document.getElementById('toggle-planner').addEventListener('click', async () => {
-  const container = document.getElementById('planner-container');
-  container.classList.toggle('hidden');
-  if (!container.classList.contains('hidden')) {
-    // load first page
-    if (document.getElementById('planner-grid').children.length === 0) {
-      await loadPlannerPage(nextUrl);
+  document.getElementById('toggle-planner').addEventListener('click', async () => {
+    const container = document.getElementById('planner-container');
+    container.classList.toggle('hidden');
+    if (!container.classList.contains('hidden')) {
+      // load first page
+      if (document.getElementById('planner-grid').children.length === 0) {
+        await loadPlannerPage(nextUrl);
+      }
     }
+  });
+
+  async function loadPlannerPage(url) {
+    if (loadingPlanner || !url) return;
+    loadingPlanner = true;
+
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    nextUrl = data.next;
+    const grid = document.getElementById('planner-grid');
+
+    for (const card of data.results) {
+      const imgData = await fetch(`https://api.scryfall.com/cards/${card.oracle_card.id}`).then(r => r.json());
+      let imgUrl = imgData.image_uris ? imgData.image_uris.normal : imgData.card_faces[0].image_uris.normal;
+
+      const img = document.createElement('img');
+      img.src = imgUrl;
+      img.title = card.name;
+      img.className = 'w-full h-auto';
+      grid.appendChild(img);
+    }
+
+    loadingPlanner = false;
   }
-});
 
-async function loadPlannerPage(url) {
-  if (loadingPlanner || !url) return;
-  loadingPlanner = true;
-
-  const resp = await fetch(url);
-  const data = await resp.json();
-
-  nextUrl = data.next;
-  const grid = document.getElementById('planner-grid');
-
-  for (const card of data.results) {
-    const imgData = await fetch(`https://api.scryfall.com/cards/${card.oracle_card.id}`).then(r => r.json());
-    let imgUrl = imgData.image_uris ? imgData.image_uris.normal : imgData.card_faces[0].image_uris.normal;
-
-    const img = document.createElement('img');
-    img.src = imgUrl;
-    img.title = card.name;
-    img.className = 'w-full h-auto';
-    grid.appendChild(img);
-  }
-
-  loadingPlanner = false;
-}
-
-// IntersectionObserver to trigger next page
-const sentinel = document.getElementById('scroll-sentinel');
-const observer = new IntersectionObserver(entries => {
-  if (entries[0].isIntersecting) {
-    loadPlannerPage(nextUrl);
-  }
-});
-observer.observe(sentinel);
+  // IntersectionObserver to trigger next page
+  const sentinel = document.getElementById('scroll-sentinel');
+  const observer = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      loadPlannerPage(nextUrl);
+    }
+  });
+  observer.observe(sentinel);
 
   loadDeck();
 </script>
