@@ -30,15 +30,26 @@ class DeckSerializer(serializers.ModelSerializer):
     planner_url = serializers.SerializerMethodField()
     cards = CardSerializer(many=True, read_only=True)
     card_count = serializers.IntegerField(source='cards.count', read_only=True)
+    card_ids = serializers.ListField(
+        child=serializers.IntegerField(), write_only=True, required=False
+    )
 
     def get_planner_url(self, obj):
         request = self.context.get('request')
         path = urls.reverse('deck-planner', kwargs={'deck_id': obj.pk})
         return request.build_absolute_uri(path)
 
+    def create(self, validated_data):
+        card_ids = validated_data.pop('card_ids', [])
+        deck = super().create(validated_data)
+        if card_ids:
+            # assign selected cards to this new deck
+            models.Card.objects.filter(id__in=card_ids).update(deck=deck)
+        return deck
+
     class Meta:
         model = models.Deck
-        fields = ['id', 'name', 'is_active', 'url', 'planner_url', 'cards', 'card_count']
+        fields = ['id', 'name', 'is_active', 'url', 'planner_url', 'cards', 'card_ids', 'card_count']
 
 class DeckListSerializer(serializers.ModelSerializer):
     class Meta:

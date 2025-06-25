@@ -50,25 +50,43 @@
       <button id="open-add-deck" class="bg-blue-500 text-white px-3 py-1 rounded text-sm">Add deck</button> 
     </h2>
     <!-- Add Deck Modal -->
-    <div id="add-deck-modal" class="fixed inset-0 bg-black/50 hidden flex justify-center items-center z-50">
-      <div class="bg-white p-6 rounded w-96 space-y-4 shadow-xl">
-        <h3 class="text-lg font-semibold mb-2">Add a new deck</h3>
+    <div id="add-deck-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div class="bg-white p-6 rounded w-[500px] relative">
 
-        <input id="new-deck-name" type="text" placeholder="Deck name"
-              class="border w-full p-2 rounded" />
+        <!-- Close -->
+        <button class="absolute top-2 right-2 text-xl" onclick="closeAddDeckModal()">✕</button>
 
-        <textarea id="new-deck-list" placeholder="Card list (one per line)"
-                  class="border w-full p-2 rounded h-32"></textarea>
+        <h2 class="text-xl font-bold mb-4">Create Deck</h2>
 
-        <!-- Error container -->
-        <div id="error-messages" class="text-red-600 text-sm mt-2"></div>
+        <!-- Deck Name -->
+        <label class="block mb-2">Deck Name</label>
+        <input id="new-deck-name" class="w-full border p-2 mb-4">
 
-        <div class="flex justify-end gap-2">
-          <button id="cancel-add-deck" class="bg-gray-200 px-3 py-1 rounded">Cancel</button>
-          <button id="submit-add-deck" class="bg-blue-500 text-white px-3 py-1 rounded">Create</button>
+        <!-- Toggle for import -->
+        <button id="toggle-import" class="text-blue-500 mb-2">Import by text</button>
+
+        <!-- Import text area -->
+        <textarea id="import-textarea" class="hidden w-full border p-2 mb-4 h-24" placeholder="Paste deck list"></textarea>
+
+        <!-- Search + card select section -->
+        <div id="card-select-section" class="mb-4">
+          <label class="block mb-2">Search & Add Cards</label>
+          <input id="card-search-input" class="w-full border p-2" placeholder="Start typing...">
+
+          <!-- Search results -->
+          <div id="search-results" class="max-h-32 overflow-y-auto mt-2 border p-2 grid grid-cols-2 gap-2"></div>
+
+          <!-- Selected card preview -->
+          <div id="selected-cards" class="flex flex-wrap gap-2 mt-2 border p-2 min-h-[50px]"></div>
         </div>
+
+        <!-- Submit -->
+        <button id="create-deck-btn" class="bg-green-500 text-white px-3 py-2 rounded w-full mt-4">Create Deck</button>
+        <button id="cancel-add-deck" class="bg-gray-500 text-white px-3 py-1 rounded mt-2">Cancel</button>
+
       </div>
     </div>
+
 
     <ul id="deck-list" class="space-y-2">
       <!-- JS will insert decks here -->
@@ -79,35 +97,133 @@
     function getCsrfToken() {
       return document.querySelector('meta[name="csrf-token"]').content;
     }
+    function closeAddDeckModal() {
+      document.getElementById('add-deck-modal').classList.add('hidden');
+      document.getElementById('new-deck-name').value = '';
+      document.getElementById('import-textarea').value = '';
+      document.getElementById('card-search-input').value = '';
+      document.getElementById('search-results').innerHTML = '';
+      document.getElementById('selected-cards').innerHTML = '';
+    }
     document.getElementById('open-add-deck').onclick = () => {
     document.getElementById('add-deck-modal').classList.remove('hidden');
     };
     document.getElementById('cancel-add-deck').onclick = () => {
+      closeAddDeckModal();
       document.getElementById('add-deck-modal').classList.add('hidden');
     };
 
-    document.getElementById('submit-add-deck').onclick = async () => {
-      const name = document.getElementById('new-deck-name').value;
-      const list = document.getElementById('new-deck-list').value;
-      const resp = await fetch('/api/deckimport/', {
+    const searchResults = document.getElementById('search-results');
+
+
+    // Toggle behavior
+    const importTextarea = document.getElementById('import-textarea');
+    const cardSelectSection = document.getElementById('card-select-section');
+
+    document.getElementById('toggle-import').onclick = () => {
+      importTextarea.classList.toggle('hidden');
+      cardSelectSection.classList.toggle('hidden');
+    };
+
+    const cardSearchInput = document.getElementById('card-search-input');
+
+    let searchTimeout;
+    cardSearchInput.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(doCardSearch, 300); // debounced
+    });
+
+    let selectedCardIds = [];
+
+    function addSelectedCard(id, imgUrl, name) {
+      // Check if already selected
+      const existing = document.querySelector(`#selected-cards img[data-id="${id}"]`);
+      if (existing) return;
+
+      const img = document.createElement('img');
+      img.src = imgUrl;
+      img.className = 'w-12 h-auto rounded';
+      img.dataset.id = id;
+      img.title = name;
+
+      // Remove on click
+      img.onclick = () => {
+        img.remove();
+        if (!document.querySelector('#selected-cards img')) {
+          searchResults.innerHTML = ''; // Clear results if no cards selected
+        }
+      };
+
+      document.getElementById('selected-cards').appendChild(img);
+    }
+
+    async function doCardSearch() {
+      const query = cardSearchInput.value.trim();
+      if (!query) {
+        searchResults.innerHTML = '';
+        return;
+      }
+
+      try {
+        const resp = await fetch(`/api/cards/?search=${encodeURIComponent(query)}&deck__isnull=True`);
+        const data = await resp.json();
+
+        // Fetch Scryfall images in parallel
+        const imgUrls = await Promise.all(
+          data.results.map(async (c) => {
+            const imgData = await fetch(`https://api.scryfall.com/cards/${c.oracle_card.id}`).then(r => r.json());
+            return { url: imgData.image_uris.normal, name: c.name };
+          })
+        );
+
+        searchResults.innerHTML = '';
+
+        data.results.forEach((card, index) => {
+          const div = document.createElement('div');
+          div.className = 'flex items-center cursor-pointer p-1 hover:bg-gray-100';
+          div.onclick = () => addSelectedCard(card.id, imgUrls[index].url, card.name);
+
+          div.innerHTML = `
+            <img src="${imgUrls[index].url}" class="w-12 h-auto rounded mr-2" />
+            <span>${card.name}</span>
+          `;
+          searchResults.appendChild(div);
+        });
+
+      } catch (error) {
+        console.error('Error searching cards:', error);
+      }
+    }
+
+
+
+    // Submit handler
+    document.getElementById('create-deck-btn').onclick = async () => {
+      const name = document.getElementById('new-deck-name').value.trim();
+      const deckList = importTextarea.value.trim();
+      const selectedCardIds = Array.from(
+        document.getElementById('selected-cards').children
+      ).map(img => img.dataset.id);
+
+      const endpoint = deckList ? '/api/deckimport/' : '/api/decks/';
+      const payload = deckList ? { name, deck_list: deckList } : { name, card_ids: selectedCardIds };
+      
+      const resp = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCsrfToken(),
-        },
-        body: JSON.stringify({ name, deck_list: list, collection: 1 })
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+        body: JSON.stringify(payload),
       });
+
       if (resp.ok) {
+        alert('Deck created successfully');
+        closeAddDeckModal();
         location.reload();
       } else {
-        const errors = await resp.json();
-        let msg = '';
-        for (const [field, messages] of Object.entries(errors)) {
-          msg += `${field}: ${messages.join(', ')}\n`;
-        }
-        alert(`Error creating deck:\n\n${msg}`);
+        const err = await resp.json();
+        alert(`Error: ${JSON.stringify(err)}`);
       }
     };
+
 
     async function fetchDecks() {
       const res = await fetch('/api/decks/');
