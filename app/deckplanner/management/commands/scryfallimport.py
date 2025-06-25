@@ -37,7 +37,7 @@ class Command(BaseCommand):
                 rarity=data.get('rarity', ''),
                 toughness=data.get('toughness', ''),
                 edhrec_rank=data.get('edhrec_rank', 0),
-                color_identity=",".join(data.get('color_identity', [])),
+                color_identity=data.get('color_identity', []),
                 set_code=data.get('set', ''),
                 set_name=data.get('set_name', '')
             )

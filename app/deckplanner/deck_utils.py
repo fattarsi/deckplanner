@@ -12,15 +12,13 @@ def get_color_identity(cards):
         # color_identity is a comma-separated string like "B,U,R"
         color_identity = card.oracle_card.color_identity
         if color_identity:
-            # Split on comma and strip spaces just in case
-            colors = [c.strip() for c in color_identity.split(',')]
-            all_colors.update(colors)
+            all_colors.update(color_identity)
 
     # Sort them in some standard order (WUBRG is common in Magic)
     color_order = ['W', 'U', 'B', 'R', 'G']
     sorted_colors = [c for c in color_order if c in all_colors]
 
-    return ','.join(sorted_colors)
+    return sorted_colors
 
 
 def validate_decklist(decklist):

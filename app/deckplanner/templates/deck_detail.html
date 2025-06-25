@@ -7,6 +7,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 <meta name="csrf-token" content="{{ csrf_token }}">
 <style>
+  html {
+    scroll-behavior: smooth;
+  }
   .card-column {
     width: 180px;
     position: relative;
@@ -36,7 +39,7 @@
 <body class="bg-gray-50 min-h-screen p-6">
 
 <!-- 🏠 Back home -->
-<a href="/" class="text-blue-500 hover:underline">&larr; Back home</a>
+<a href="/" id="top" class="text-blue-500 hover:underline">&larr; Back home</a>
 
 <h1 class="text-2xl font-bold mb-4" id="deck-name">Loading deck...</h1>
 
@@ -44,11 +47,10 @@
 <div id="columns-container" class="flex flex-wrap gap-8"></div>
 
 <!-- Middle section -->
-<div class="mt-8 grid grid-cols-2 gap-8">
+<div class="mt-8 p-6 bg-gray-100 rounded-lg shadow-md grid grid-cols-2 gap-8">
   <!-- Remove column -->
   <div>
     <h3 class="text-red-500 font-bold mb-2 text-right">Remove</h3>
-    <!-- justify-end will push the contents to the right -->
     <div id="remove-column" class="flex flex-col gap-2 items-end min-h-[100px]" data-list="remove"></div>
   </div>
 
@@ -70,7 +72,21 @@
   </div>
 </div>
 
+<!-- Back to top link -->
+<a href="#top" id="back-to-top"
+  class="hidden fixed bottom-4 right-4 z-50 bg-blue-500 text-white px-3 py-2 rounded shadow hover:bg-blue-600 transition">
+  ↑ Back to top
+</a>
+
 <script>
+  const backToTop = document.getElementById('back-to-top');
+  document.addEventListener('scroll', () => {
+    if (window.scrollY > 400) {
+      backToTop.classList.remove('hidden');  // show
+    } else {
+      backToTop.classList.add('hidden');     // hide
+    }
+  });
   function getCsrfToken() {
     return document.querySelector('meta[name="csrf-token"]').content;
   }
@@ -267,5 +283,6 @@
 
   loadDeck();
 </script>
+
 </body>
 </html>

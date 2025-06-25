@@ -75,7 +75,7 @@ class DeckPlannerView(views.APIView):
         # cards not in any deck with compatible color identity
         ac = models.Card.objects.exclude(oracle_card__type_line__startswith='Basic Land')
         ac = ac.filter(
-            oracle_card__color_identity__contained_by=ci.split(','),
+            oracle_card__color_identity__contained_by=ci,
             deck__isnull=True).order_by('oracle_card__edhrec_rank')
 
         paginator = pagination.PageNumberPagination()
