@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 
 from rest_framework import views, viewsets, response, status
+from rest_framework import filters
 from rest_framework import pagination
 from rest_framework import parsers
 from rest_framework import renderers
@@ -44,6 +45,19 @@ class DeckViewSet(viewsets.ModelViewSet):
 class CardViewSet(viewsets.ModelViewSet):
     queryset = models.Card.objects.all()
     serializer_class = serializers.CardSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        # Check params manually
+        if self.request.query_params.get('color_identity'):
+            qs = qs.filter(oracle_card__color_identity__icontains=self.request.query_params['color_identity'])
+        if self.request.query_params.get('cmc'):
+            qs = qs.filter(oracle_card__cmc=self.request.query_params['cmc'])
+        if self.request.query_params.get('deck__isnull') == 'True':
+            qs = qs.filter(deck__isnull=True)
+        return qs
 
 class DeckImportViewSet(viewsets.ViewSet):
     serializer_class = serializers.DeckImportSerializer
