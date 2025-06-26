@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
 
 from rest_framework import views, viewsets, response, status
@@ -95,7 +96,8 @@ class DeckPlannerView(views.APIView):
         if supertype:
             # filter by supertype (before " —")
             qs = qs.filter(
-                oracle_card__type_line__istartswith=supertype
+                Q(oracle_card__type_line__istartswith=supertype) |
+                Q(oracle_card__type_line__istartswith='Legendary ' + supertype)
             )
 
         if cmc:
