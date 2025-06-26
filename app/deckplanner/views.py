@@ -89,6 +89,8 @@ class DeckPlannerView(views.APIView):
         supertype = self.request.query_params.get('supertype')
         cmc = self.request.query_params.get('cmc')
         color = self.request.query_params.get('color')
+        oracle_text = self.request.query_params.get('oracle_text')
+        type_line = self.request.query_params.get('type_line')
 
         if search:
             qs = qs.filter(name__icontains=search)
@@ -109,6 +111,11 @@ class DeckPlannerView(views.APIView):
         if color:
             # color_identity is a list on oracle_card; this assumes you store it as arrayfield
             qs = qs.filter(oracle_card__color_identity__contains=[color])
+
+        if oracle_text:
+            qs = qs.filter(oracle_card__oracle_text__icontains=oracle_text)
+        if type_line:
+            qs = qs.filter(oracle_card__type_line__icontains=type_line)
 
         return qs.order_by('name')  # optional ordering
 

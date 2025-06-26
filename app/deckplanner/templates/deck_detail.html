@@ -109,6 +109,12 @@
       <option value="G">Green</option>
       <option value="C">Colorless</option>
     </select>
+    <!-- Oracle text filter -->
+    <input id="filter-oracle-text" class="border rounded px-2 py-1" placeholder="Search oracle text" />
+
+    <!-- Type filter -->
+    <input id="filter-type-line" class="border rounded px-2 py-1" placeholder="Search type line" />
+
   </div>
 
     <div id="planner-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(11.5rem, 1fr)); gap:2px;"></div>
@@ -130,10 +136,12 @@
   const deckId = "{{ deck_id }}";
 
   // Attach event listeners
-  ['filter-name','filter-supertype','filter-cmc','filter-color'].forEach(id => {
+  ['filter-name','filter-supertype','filter-cmc','filter-color','filter-oracle-text', 'filter-type-line'].forEach(id => {
     document.getElementById(id).addEventListener('change', resetAndReloadPlanner);
   });
-  document.getElementById('filter-name').addEventListener('input', debounce(resetAndReloadPlanner, 300)); // optional debounce for search
+  ['filter-name', 'filter-oracle-text', 'filter-type-line'].forEach(id => {
+    document.getElementById(id).addEventListener('input', debounce(resetAndReloadPlanner, 300)); // optional debounce for search
+  });
 
   function debounce(func, delay) {
     let timer;
@@ -192,11 +200,15 @@
     const supertype = document.getElementById('filter-supertype').value;
     const cmc = document.getElementById('filter-cmc').value;
     const color = document.getElementById('filter-color').value;
+    const oracleText = document.getElementById('filter-oracle-text').value;
+    const typeLine = document.getElementById('filter-type-line').value;
 
     if (name) params.append('search', name);
     if (supertype) params.append('supertype', supertype);
     if (cmc) params.append('cmc', cmc);
     if (color) params.append('color', color);
+    if (oracleText) params.append('oracle_text', oracleText);
+    if (typeLine) params.append('type_line', typeLine);
 
     return `${baseUrl}?${params.toString()}`;
   }

@@ -206,7 +206,7 @@
       ).map(img => img.dataset.id);
 
       const endpoint = deckList ? '/api/deckimport/' : '/api/decks/';
-      const payload = deckList ? { name, deck_list: deckList } : { name, card_ids: selectedCardIds };
+      const payload = deckList ? { name, deck_list: deckList, collection: 1 } : { name, card_ids: selectedCardIds };
       
       const resp = await fetch(endpoint, {
         method: 'POST',
