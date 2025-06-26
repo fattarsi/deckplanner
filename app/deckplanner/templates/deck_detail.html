@@ -296,12 +296,26 @@
       column.className = 'card-column';
       columnDiv.appendChild(column);
 
-      const imgUrls = await Promise.all(
-        cards.map(async (c) => {
-          const imgData = await fetch(`https://api.scryfall.com/cards/${c.oracle_card.id}`).then(r => r.json());
-          return { url: imgData.image_uris.normal, name: c.name };
-        })
-      );
+    const imgUrls = await Promise.all(
+      cards.map(async (c) => {
+        const imgData = await fetch(`https://api.scryfall.com/cards/${c.oracle_card.id}`).then(r => r.json());
+        let imgUrl;
+
+        if (imgData.image_uris) {
+          // Single-faced card
+          imgUrl = imgData.image_uris.normal;
+        } else if (imgData.card_faces && imgData.card_faces.length) {
+          // Multi-faced card (e.g. double-faced)
+          imgUrl = imgData.card_faces[0].image_uris.normal;
+        } else {
+          // Fallback image in case of errors
+          imgUrl = 'https://via.placeholder.com/200x280?text=No+image';
+        }
+
+        return { url: imgUrl, name: c.name };
+      })
+    );
+
 
       cards.forEach((card, index) => {
         const img = document.createElement('img');
