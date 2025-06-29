@@ -41,6 +41,25 @@
 <!-- 🏠 Back home -->
 <a href="/" id="top" class="text-blue-500 hover:underline">&larr; Back home</a>
 
+<!-- Export Button -->
+<button id="export-deck-btn" class="bg-gray-600 text-white px-3 py-1 rounded mt-4">Export Deck</button>
+
+<!-- Export Modal -->
+<div id="export-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white p-6 rounded w-[500px] relative">
+    <button onclick="closeExportModal()" class="absolute top-2 right-2 text-xl">✕</button>
+    <h2 class="text-xl font-bold mb-4">Export Deck</h2>
+
+    <textarea id="export-textarea" class="w-full h-48 border p-2 mb-4" readonly></textarea>
+
+    <div class="flex gap-4 justify-end">
+      <button onclick="copyExportText()" class="bg-blue-500 text-white px-4 py-1 rounded">Copy</button>
+      <button onclick="downloadExportText()" class="bg-green-600 text-white px-4 py-1 rounded">Download</button>
+    </div>
+  </div>
+</div>
+
+
 <h1 class="text-2xl font-bold mb-4" id="deck-name">Loading deck...</h1>
 
 <!-- Supertype columns -->
@@ -323,13 +342,15 @@
           // Fallback image in case of errors
           imgUrl = 'https://via.placeholder.com/200x280?text=No+image';
         }
+        // Enable export
+        document.getElementById('export-deck-btn').onclick = () => openExportModal(data);
 
         return { url: imgUrl, name: c.name };
       })
     );
 
 
-      cards.forEach((card, index) => {
+    cards.forEach((card, index) => {
         const img = document.createElement('img');
         img.src = imgUrls[index].url;
         img.title = card.name;
@@ -392,6 +413,55 @@
     }
   });
   observer.observe(sentinel);
+
+  function openExportModal(deck) {
+    const modal = document.getElementById('export-modal');
+    const textarea = document.getElementById('export-textarea');
+
+    // Build export string: "<qty> <name> <collector number>"
+    const cardCounts = {};
+
+    deck.cards.forEach(card => {
+      const key = `${card.name}|${card.oracle_card.collector_number}`;
+      cardCounts[key] = (cardCounts[key] || 0) + 1;
+    });
+
+    const lines = Object.entries(cardCounts).map(([key, count]) => {
+      const [name, collectorNumber] = key.split('|');
+      return `${count} ${name} ${collectorNumber}`;
+    });
+
+    textarea.value = lines.join('\n');
+    modal.classList.remove('hidden');
+  }
+
+  function closeExportModal() {
+    document.getElementById('export-modal').classList.add('hidden');
+  }
+
+  function copyExportText() {
+    const text = document.getElementById('export-textarea').value;
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Copied to clipboard!');
+    });
+  }
+
+  function downloadExportText() {
+    const text = document.getElementById('export-textarea').value;
+    const deckName = document.getElementById('deck-name').textContent.trim();
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+
+    // sanitize filename (remove slashes, colons, etc.)
+    const safeName = deckName.replace(/[^a-z0-9-_ ]/gi, '_');
+
+    a.href = url;
+    a.download = `${safeName}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
 
   loadDeck();
 </script>
