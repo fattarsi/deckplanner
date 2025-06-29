@@ -15,7 +15,7 @@ class CollectionSerializer(serializers.ModelSerializer):
 class OracleCardSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.OracleCard
-        fields = ['id', 'cmc', 'type_line', 'color_identity', 'rarity', 'edhrec_rank']
+        fields = ['id', 'cmc', 'type_line', 'color_identity', 'set_code', 'rarity', 'edhrec_rank']
 
 
 class CardSerializer(serializers.ModelSerializer):

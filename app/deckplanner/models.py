@@ -10,11 +10,16 @@ class OracleCard(models.Model):
     oracle_text = models.CharField(max_length=4096)
     power = models.CharField(max_length=256)
     rarity = models.CharField(max_length=256)
+    collector_number = models.CharField(max_length=256)
     toughness = models.CharField(max_length=256)
     edhrec_rank = models.IntegerField()
     color_identity = models.JSONField(default=list)
     set_code = models.CharField(max_length=256)
     set_name = models.CharField(max_length=256)
+    prices = models.JSONField(default=dict)
+    image_uris = models.JSONField(default=dict)
+    game_changer = models.BooleanField(default=False)
+
 
     def __str__(self):
         return self.name

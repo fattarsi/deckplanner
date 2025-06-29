@@ -35,11 +35,15 @@ class Command(BaseCommand):
                 oracle_text=data.get('oracle_text', ''),
                 power=data.get('power', ''),
                 rarity=data.get('rarity', ''),
+                collector_number=data.get('collector_number', ''),
                 toughness=data.get('toughness', ''),
                 edhrec_rank=data.get('edhrec_rank', 0),
                 color_identity=data.get('color_identity', []),
                 set_code=data.get('set', ''),
-                set_name=data.get('set_name', '')
+                set_name=data.get('set_name', ''),
+                prices=data.get('prices', {}),
+                image_uris=data.get('image_uris', {}),
+                game_changer=data.get('game_changer', False),
             )
         except Exception as e:
             self.stdout.write(self.style.ERROR(f'Error creating card: {e}'))
