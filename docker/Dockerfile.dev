@@ -2,10 +2,9 @@ FROM python:3
 
 EXPOSE 8000
 WORKDIR /
-COPY . /app
-COPY docker/entrypoint.sh /app/docker/entrypoint.sh
+#COPY . /
 COPY app/requirements.txt /tmp/requirements.txt
 RUN apt update
 RUN apt install -y mariadb-client
 RUN pip3 install -r /tmp/requirements.txt --no-cache-dir
-ENTRYPOINT ["/app/docker/entrypoint.sh"]
+ENTRYPOINT ["/app/docker/entrypoint-dev.sh"]

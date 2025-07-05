@@ -3,3 +3,4 @@ djangorestframework==3.15.1
 mysqlclient==2.2.4
 ijson==3.2.3
 python-decouple==3.8
+gunicorn==23.0.0
