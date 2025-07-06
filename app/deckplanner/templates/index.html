@@ -172,9 +172,20 @@
         const imgUrls = await Promise.all(
           data.results.map(async (c) => {
             const imgData = await fetch(`https://api.scryfall.com/cards/${c.oracle_card.id}`).then(r => r.json());
-            return { url: imgData.image_uris.normal, name: c.name };
+
+            let imgUrl;
+            if (imgData.image_uris) {
+              imgUrl = imgData.image_uris.normal;
+            } else if (imgData.card_faces?.length > 0 && imgData.card_faces[0].image_uris) {
+              imgUrl = imgData.card_faces[0].image_uris.normal;
+            } else {
+              imgUrl = 'https://via.placeholder.com/200x280?text=No+Image';
+            }
+
+            return { url: imgUrl, name: c.name };
           })
         );
+
 
         searchResults.innerHTML = '';
 

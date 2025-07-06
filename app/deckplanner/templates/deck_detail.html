@@ -382,6 +382,11 @@
     if (loadingPlanner || !url) return;
     loadingPlanner = true;
 
+    // Fix mixed-content issue: convert http:// to https://
+    if (url.startsWith('http://')) {
+      url = url.replace('http://', 'https://');
+    }
+
     const resp = await fetch(url);
     const data = await resp.json();
 
