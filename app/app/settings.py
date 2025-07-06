@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
+
 from decouple import config, Csv
 from pathlib import Path
 
@@ -28,6 +30,11 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = True
 
 ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', cast=Csv())
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://10.1.10.180:8844",
+    "https://magic.fattarsi.com",
+]
 
 
 # Application definition
@@ -124,6 +131,8 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
+
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 STATIC_URL = 'static/'
 

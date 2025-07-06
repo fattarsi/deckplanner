@@ -11,5 +11,7 @@ DJANGO_SUPERUSER_PASSWORD=admin ${MANAGEPY} createsuperuser \
     --username=admin \
     --email=cfattarsi@gmail.com
 
+${MANAGEPY} collectstatic --noinput
+
 cd /app/app/
 gunicorn app.wsgi:application --bind 0.0.0.0:8844
